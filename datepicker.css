@@ -1,0 +1,74 @@
+.header {
+    width: 50%;
+    text-align: center;
+    padding: 10px 0;
+    background-color: #2196F3;
+    color: #fff;
+    font-weight: bold;
+    font-size: 22px;
+    border-bottom: 2px solid #1565C0;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.nav-button {
+  background-color: #3f51b5;
+  color: #fff;
+  font-size: 16px;
+  width: 25px;
+  height: 25px;
+  border: none;
+  border-radius: 100%;
+  cursor: pointer;
+  margin: 0 3px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.current-month {
+  font-size: 18px;
+}
+
+.table {
+  width: 50%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.table th {
+  font-weight: bold;
+  color: #fff;
+  background-color: #3f51b5;
+}
+
+.table td {
+  background-color: #fff;
+}
+
+.table td.dimmed {
+  color: #ccc;
+}
+
+.table td.clickable:hover {
+  background-color: #19e3be;
+}
+
+.nav-button:hover {
+  background-color: #2c387e;
+}
+
+.table td:hover {
+  background-color: #f5f5f5;
+  color: #444;
+}
+
+.table td:hover {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
