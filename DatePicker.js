@@ -1,158 +1,134 @@
-class DatePicker { 
-  constructor(id, callbackFunction) {
-      this.id = id;
-      this.callbackFunction = callbackFunction;
-      this.div = document.getElementById(id);
-      this.currentDate = new Date();
-  }
+'use strict';
+function createDatePicker(id, callback, initialDate) {
+const currentDate = (initialDate !== undefined && initialDate !== null) ? initialDate : new Date();
 
-  render(date, defaultSelectedDate) {
-      this.currentDate = date;
-      this.clearDivContents();
+    function render(date) {
+        const container = document.getElementById(id);
+        if (!container) {
+            console.error(`Element with id "${id}" not found.`);
+            return;
+        }
 
-      const headerContainer = this.createHeaderContainer();
-      const monthYearHeader = this.createMonthYearHeader();
-      this.appendHeaderElements(headerContainer, monthYearHeader);
-      this.div.appendChild(headerContainer);
+        // Create a new date object to avoid modifying the original date
+        const selectedDate = new Date(date);
 
-      const headerRow = this.createHeaderRow();
-      const calendarBody = this.createCalendarBody();
-      this.populateCalendar(headerRow, calendarBody, defaultSelectedDate);
-  }
+        // Calculate the first day of the month
+        selectedDate.setDate(1);
 
-  clearDivContents() {
-      this.div.innerHTML = "";
-  }
+        // Create the calendar HTML
+        let calendarHTML = `
+      <div class="header">
+        <span class="prev-month">&lt;</span>
+        <span class="current-month">${selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+        <span class="next-month">&gt;</span>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="day-header">Su</th>
+            <th class="day-header">Mo</th>
+            <th class="day-header">Tu</th>
+            <th class="day-header">We</th>
+            <th class="day-header">Th</th>
+            <th class="day-header">Fr</th>
+            <th class="day-header">Sa</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
 
-  createHeaderContainer() {
-      const headerContainer = document.createElement("div");
-      return headerContainer;
-  }
 
-  createMonthYearHeader() {
-      const monthYearHeader = document.createElement("div");
-      monthYearHeader.classList.add("month-year-header");
 
-      const previousMonthButton = this.createNavButton("&lt;");
-      previousMonthButton.addEventListener("click", () => this.render(this.getPreviousMonth()));
+        // eslint-disable-next-line no-shadow
+        // Calculate the number of days in the month
 
-      const nextMonthButton = this.createNavButton("&gt;");
-      nextMonthButton.addEventListener("click", () => this.render(this.getNextMonth()));
+        // Calculate the day of the week for the first day of the month (0 = Sunday, 6 = Saturday)
+        const firstDayOfWeek = selectedDate.getDay();
 
-      const monthYearText = this.createMonthYearText();
+        // Calculate the number of days to display from the previous month
+        const daysFromPrevMonth = (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1);
 
-      monthYearHeader.append(previousMonthButton, " ", monthYearText, " ", nextMonthButton);
-      return monthYearHeader;
-  }
+        // Calculate the date of the first day to display
+        const firstDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+        firstDate.setDate(1 - daysFromPrevMonth);
 
-  createNavButton(text) {
-      const button = document.createElement("button");
-      button.innerHTML = text;
-      button.classList.add("nav-button");
-      return button;
-  }
+        // Fill in the calendar with days
+        for (let week = 0; week < 6; week++) {
+            calendarHTML += '<tr>';
+            for (let day = 0; day < 7; day++) {
+                const currentDay = new Date(firstDate);
+                currentDay.setDate(currentDay.getDate() + (week * 7) + day);
+                const isCurrentMonth = currentDay.getMonth() === selectedDate.getMonth();
 
-  createMonthYearText() {
-      const monthYearText = document.createElement("span");
-      monthYearText.innerText = `${this.getMonthName(this.currentDate.getMonth())} ${this.currentDate.getFullYear()}`;
-      return monthYearText;
-  }
+                if (!isCurrentMonth) {
+                    // Display days from the previous or next month
+                    calendarHTML += `<td class="disabled">${currentDay.getDate()}</td>`;
+                } else {
+                    // Display clickable days for the current month
+                    const dateObject = {
+                        month: currentDay.getMonth() + 1,
+                        day: currentDay.getDate(),
+                        year: currentDay.getFullYear(),
+                    };
+                    calendarHTML += `<td class="clickable" onclick="selectDate(${JSON.stringify(dateObject)})">${currentDay.getDate()}</td>`;
+                }
+            }
+            calendarHTML += '</tr>';
+        }
 
-  appendHeaderElements(headerContainer, monthYearHeader) {
-      headerContainer.appendChild(monthYearHeader);
-  }
+        calendarHTML += `
+        </tbody>
+      </table>
+    `;
 
-  createHeaderRow() {
-      const headerRow = document.createElement("tr");
-      const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-      daysOfWeek.forEach(day => {
-          const headerCell = document.createElement("th");
-          headerCell.innerText = day;
-          headerRow.appendChild(headerCell);
-      });
-      return headerRow;
-  }
+        container.innerHTML = calendarHTML;
 
-  createCalendarBody() {
-      return document.createElement("tbody");
-  }
+        // Add event listeners to the arrow spans
+        const prevMonthSpan = container.querySelector('.prev-month');
+        const nextMonthSpan = container.querySelector('.next-month');
+        // eslint-disable-next-line no-use-before-define
+        prevMonthSpan.addEventListener('click', () => prevMonth());
+        // eslint-disable-next-line no-use-before-define
+        nextMonthSpan.addEventListener('click', () => nextMonth());
+    }
 
-  populateCalendar(headerRow, calendarBody, defaultSelectedDate) {
-      const daysInMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0).getDate();
-      const firstDayOfMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1).getDay();
-      const lastDayOfMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0).getDay();
+    function selectDate(dateObject) {
+        callback(id, dateObject);
+    }
 
-      let currentWeek = document.createElement("tr");
+    function prevMonth() {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        render(currentDate);
+    }
 
-      this.populatePreviousMonthDays(firstDayOfMonth, currentWeek);
-      this.populateCurrentMonthDays(daysInMonth, currentWeek, defaultSelectedDate);
-      this.populateFollowingMonthDays(lastDayOfMonth, currentWeek);
+    function nextMonth() {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        render(currentDate);
+    }
 
-      this.div.append(headerRow, calendarBody);
-  }
+    // Initial rendering
+    render(currentDate);
 
-  populatePreviousMonthDays(firstDayOfMonth, currentWeek) {
-      if (firstDayOfMonth > 0) {
-          const daysInPreviousMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 0).getDate();
-          for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-              const calendarCell = this.createCalendarCell(daysInPreviousMonth - i, "dimmed");
-              currentWeek.appendChild(calendarCell);
-          }
-      }
-  }
+    // Expose the selectDate, prevMonth, and nextMonth functions to the global scope
+    window.selectDate = selectDate;
+    window.prevMonth = prevMonth;
+    window.nextMonth = nextMonth;
 
-  populateCurrentMonthDays(daysInMonth, currentWeek, defaultSelectedDate) {
-      for (let i = 1; i <= daysInMonth; i++) {
-          const calendarCell = this.createCalendarCell(i);
-          if (this.isDefaultSelectedDate(defaultSelectedDate, i)) {
-              calendarCell.classList.add("selected");
-          }
-          currentWeek.appendChild(calendarCell);
-
-          if (currentWeek.children.length === 7 || i === daysInMonth) {
-              this.calendarBody.appendChild(currentWeek);
-              currentWeek = document.createElement("tr");
-          }
-      }
-  }
-
-  populateFollowingMonthDays(lastDayOfMonth, currentWeek) {
-      if (lastDayOfMonth < 6) {
-          for (let i = lastDayOfMonth + 1; i < 7; i++) {
-              const calendarCell = this.createCalendarCell(i - lastDayOfMonth, "dimmed");
-              currentWeek.appendChild(calendarCell);
-          }
-      }
-  }
-
-  createCalendarCell(date, className = "") {
-      const calendarCell = document.createElement("td");
-      calendarCell.innerText = date;
-      if (className !== "") {
-          calendarCell.classList.add(className);
-      }
-      return calendarCell;
-  }
-
-  isDefaultSelectedDate(defaultSelectedDate, i) {
-      return defaultSelectedDate && defaultSelectedDate.date === i &&
-          defaultSelectedDate.year === this.currentDate.getFullYear() &&
-          defaultSelectedDate.month === this.currentDate.getMonth() + 1;
-  }
-
-  getPreviousMonth() {
-      return new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
-  }
-
-  getNextMonth() {
-      return new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
-  }
-
-  getMonthName(monthIndex) {
-      const monthNames = [
-          "January", "February", "March", "April", "May", "June",
-          "July", "August", "September", "October", "November", "December"
-      ];
-      return monthNames[monthIndex];
-  }
+    return {
+        prevMonth,
+        nextMonth,
+        selectDate,
+    };
 }
+
+// Create instances of the DatePicker class with separate IDs
+// eslint-disable-next-line no-unused-vars
+var datePicker1 = createDatePicker("datepicker1", function (id, fixedDate) {
+    console.log("DatePicker with id", id, "selected date:", fixedDate.month + "/" + fixedDate.day + "/" + fixedDate.year);
+});
+
+// Initialize datePicker2 with the date set to January 2009 and a different ID
+// eslint-disable-next-line no-unused-vars
+var datePicker2 = createDatePicker("datepicker2", function (id, fixedDate) {
+    console.log("DatePicker with id", id, "selected date:", fixedDate.month + "/" + fixedDate.day + "/" + fixedDate.year);
+}, new Date("January 1, 2009"));
