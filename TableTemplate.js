@@ -1,48 +1,45 @@
 'use strict';
-
 class TableTemplate {
     /**
-     * Fills in the table with the provided data.
-     * Replaces template strings in the table headers and cells with corresponding values from the dictionary.
-     * If a columnName is specified, only the cells in that column will be updated.
-     * If no columnName is specified, all cells in the table will be updated.
-     * @param {string} tableId - The ID of the table element.
-     * @param {object} dictionary - The dictionary containing the values to replace the template strings.
-     * @param {string} [columnName] - The name of the column to update. Optional.
+     * Updates the table based on dictionary values.
+     * Headers and cells with template strings are replaced with dictionary values.
+     * Updates only cells in a specified column if columnName is provided.
+     * If no columnName is given, all cells are updated.
+     * Ensures the table is visible after updates.
+     * 
+     * @param {string} tableId The ID of the table to update.
+     * @param {object} dictionary Key-value pairs for replacing template strings.
+     * @param {string} [columnName] The name of the column to specifically update (optional).
      */
     static fillIn(tableId, dictionary, columnName) {
         const table = document.getElementById(tableId);
         if (!table) {
-            console.error('Table not found:', tableId);
+            console.error(`Table with ID "${tableId}" not found.`);
             return;
         }
 
-        // Helper function to perform template replacement
-        function replaceTemplateString(text) {
-            return text.replace(/{{(\w+)}}/g, (match, key) => dictionary[key] || '');
-        }
+        // Replace template strings with values from the dictionary.
+        const replaceTemplateString = (text) => text.replace(/{{(\w+)}}/g, (match, key) => dictionary[key] || '');
 
-        // Update table headers
+        let columnIndex = null;
         const headers = table.rows[0].cells;
-        let columnIndex = columnName ? -1 : null; // null for full table processing
         for (let i = 0; i < headers.length; i++) {
-            headers[i].innerHTML = replaceTemplateString(headers[i].innerHTML);
-            if (headers[i].textContent === columnName) {
+            const newText = replaceTemplateString(headers[i].innerHTML);
+            headers[i].innerHTML = newText;
+            if (columnName && newText === columnName) {
                 columnIndex = i;
             }
         }
 
-        // Update table cells
-        for (let rowIndex = 1; rowIndex < table.rows.length; rowIndex++) {
-            const row = table.rows[rowIndex];
-            for (let cellIndex = 0; cellIndex < row.cells.length; cellIndex++) {
-                if (columnIndex === null || cellIndex === columnIndex) {
-                    row.cells[cellIndex].innerHTML = replaceTemplateString(row.cells[cellIndex].innerHTML);
+        // Update cells if no columnName is specified or if it matches the column being iterated.
+        Array.from(table.rows).slice(1).forEach(row => {
+            Array.from(row.cells).forEach((cell, index) => {
+                if (columnIndex === null || index === columnIndex) {
+                    cell.innerHTML = replaceTemplateString(cell.innerHTML);
                 }
-            }
-        }
+            });
+        });
 
-        // Make the table visible after processing
         table.style.visibility = 'visible';
     }
 }
